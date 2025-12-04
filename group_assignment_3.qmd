@@ -161,6 +161,36 @@ cluster_data %>%
   theme_minimal()
 ```
 
+```{r, pca}
+pca_results <- prcomp(my_artist, scale = TRUE, center = TRUE)
+
+pca_results %>% 
+  pluck("rotation")
+
+melt(pca_results$rotation) %>%
+  filter(Var2 == "PC1") %>% 
+  ggplot(aes(x = Var1, y = value, fill = Var1)) +
+    geom_bar(stat = "identity") +
+    labs(y = "loadings", x = "original features", fill = "original features")
+
+fviz_pca_var(pca_results, repel = TRUE)
+
+pca_results %>% 
+  tidy(matrix = "eigenvalues") %>% 
+  ggplot(aes(y = percent, x = PC)) + 
+    geom_point(size = 2) + 
+    geom_line() + 
+    labs(y = "% of variance explained")
+
+pca_results %>% 
+  tidy(matrix = "eigenvalues") %>% 
+  rbind(0) %>% 
+  ggplot(aes(y = cumulative, x = PC)) + 
+    geom_point(size = 2) + 
+    geom_line() + 
+    labs(y = "CUMULATIVE % of variance explained")
+```
+
 </details>
 
 
