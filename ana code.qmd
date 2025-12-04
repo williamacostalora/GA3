@@ -81,22 +81,6 @@ fviz_dend(hier_model, k = 6, cex = 0.35)
 
 ```
 
-```{r}
-
-
-```
-
-```{r}
-
-tibble(K = 1:10) %>%
-  mutate(SS = map(K, ~ kmeans(scale(my_artist), centers = .x)$tot.withinss)) %>% 
-  unnest(cols = c(SS))
-
-
-cluster_data <- my_artist %>% 
-  mutate(kmeans_cluster_k = kmeans_model$cluster)
-```
-
 PCA
 
 ```{r}
