@@ -1,0 +1,155 @@
+---
+title: "ga3"
+format: html
+editor: visual
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+# load data
+
+library(tidyverse)
+library(cluster)      # to build the hierarchical clustering algorithm
+library(factoextra)
+music <- read_csv("https://bcheggeseth.github.io/253_spring_2024/data/billboard.csv")
+
+# check it out
+head(music)
+
+music %>% 
+  count(performer) %>% 
+  filter(n >= 30)
+
+```
+
+```{r}
+# Pick just one of these artists to study
+my_artist <- music %>% 
+  filter(performer == "Glee Cast") %>% 
+  select(-performer) %>% 
+  group_by(song) %>%
+  slice_sample(n = 1) %>% 
+  ungroup()
+  
+my_artist <- my_artist %>% 
+  column_to_rownames("song")
+
+
+my_artist %>% 
+  mutate(mode = as.factor(mode)) %>%
+  mutate(key = as.factor(key)) %>%
+  mutate(time_signature = as.factor(time_signature))
+
+
+```
+
+HIERARCHICAL CLUSTERING
+
+```{r}
+
+
+# Scenario 2: AT LEAST 1 feature x is a FACTOR (categorical)
+# Use either a "complete", "single", "average", or "centroid" linkage
+hier_model <- hclust(daisy(my_artist, metric = "gower"), method = "complete")
+
+# Heat maps: ordered by the id variable (not clustering)
+heatmap(scale(data.matrix(my_artist)), Colv = NA, Rowv = NA)
+
+# Heat maps: ordered by dendrogram / clustering
+heatmap(scale(data.matrix(my_artist)), Colv = NA)
+
+# Dendrogram (change font size w/ cex)
+fviz_dend(hier_model, cex = 1)
+
+
+
+```
+
+```{r}
+cluster_data <- my_artist %>% 
+  mutate(hier_cluster_k = as.factor(cutree(hier_model, k = 6)))
+         
+# Visualize the clusters on the dendrogram (change font size w/ cex)
+fviz_dend(hier_model, k = 6, cex = 0.35)
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+tibble(K = 1:10) %>%
+  mutate(SS = map(K, ~ kmeans(scale(my_artist), centers = .x)$tot.withinss)) %>% 
+  unnest(cols = c(SS))
+
+
+cluster_data <- my_artist %>% 
+  mutate(kmeans_cluster_k = kmeans_model$cluster)
+```
+
+PCA
+
+```{r}
+# scale = TRUE, center = TRUE first standardizes the features
+pca_results <- prcomp(my_artist, scale = TRUE, center = TRUE)
+
+# Get the loadings which define the PCs
+pca_results %>% 
+  pluck("rotation")
+
+# Plot loadings for first "k" PCs (you pick k)
+library(reshape2)
+melt(pca_results$rotation[, 1:10]) %>% 
+  ggplot(aes(x = Var1, y = value, fill = Var1)) +
+    geom_bar(stat = "identity") +
+    facet_wrap(~ Var2) + 
+    labs(y = "loadings", x = "original features", fill = "original features")
+
+# Plot loadings for just the first PC
+melt(pca_results$rotation) %>%
+  filter(Var2 == "PC1") %>% 
+  ggplot(aes(x = Var1, y = value, fill = Var1)) +
+    geom_bar(stat = "identity") +
+    labs(y = "loadings", x = "original features", fill = "original features")
+
+# Loadings plot for first 2 PCs
+library(factoextra)
+fviz_pca_var(pca_results, repel = TRUE)
+```
+
+```{r}
+# Load package for tidy table
+library(tidymodels)
+
+# Numerical summaries: Measure information captured by each PC
+pca_results %>% 
+  tidy(matrix = "eigenvalues")
+
+# Graphical summary 1: SCREE PLOT
+# Plot % of variance explained by each PC
+pca_results %>% 
+  tidy(matrix = "eigenvalues") %>% 
+  ggplot(aes(y = percent, x = PC)) + 
+    geom_point(size = 2) + 
+    geom_line() + 
+    labs(y = "% of variance explained")
+
+# Graphical summary 2: Plot cumulative % of variance explained by each PC
+pca_results %>% 
+  tidy(matrix = "eigenvalues") %>% 
+  rbind(0) %>% 
+  ggplot(aes(y = cumulative, x = PC)) + 
+    geom_point(size = 2) + 
+    geom_line() + 
+    labs(y = "CUMULATIVE % of variance explained")
+```
