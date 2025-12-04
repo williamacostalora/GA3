@@ -1,0 +1,246 @@
+---
+title: "Your Title"
+subtitle: "STAT 253: Statistical Machine Learning"
+date: today
+author: "Your Names"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    embed-resources: true
+    code-tools: true
+---
+
+
+
+<!-- Your report should follow the format specified in the Group Assignment 3 Instructions. Please review that document carefully! -->
+
+
+
+
+
+```{r}
+#| include: false
+# Load packages 
+library(tidyverse)
+
+
+# if your group needs any other packages, add them here
+
+```
+
+
+# Research Goals
+
+
+
+# Data
+
+```{r}
+#| message: false
+#| warning: false
+#| include: false
+
+# read in data
+music <- read.csv("https://bcheggeseth.github.io/253_spring_2024/data/billboard.csv")
+
+# Check out artists with at least 40 songs
+music %>% 
+  count(performer) %>% 
+  filter(n >= 40) %>% 
+  select(performer)
+
+# Pick just one of these artists to study
+my_artist <- music %>% 
+  filter(performer == "___") %>% 
+  select(-performer) %>% 
+  group_by(song) %>%       # The last rows deal w songs that appear more than once
+  slice_sample(n = 1) %>% 
+  ungroup()
+
+# clean data, if necessary
+
+
+```
+
+```{r}
+#| message: false
+#| warning: false
+#| echo: false
+
+# visualization
+
+```
+
+
+# Cluster Analysis
+
+## Implementation
+
+(Describe methods here.)
+
+
+
+
+<!-- don't modify the formatting below here -->
+See code below for full details.
+
+<details>
+<summary>View Code</summary>
+
+```{r}
+#| message: false
+#| warning: false
+
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(tidyr)
+library(lubridate)
+library(tidymodels)
+library(kknn)
+library(cluster)
+library(tidyverse)
+library(factoextra)
+```
+
+```{r, wrangling}
+music <- read_csv("https://bcheggeseth.github.io/253_spring_2024/data/billboard.csv")
+
+music %>% 
+  count(performer) %>% 
+  filter(n >= 30)
+
+my_artist <- music %>% 
+  filter(performer == "Glee Cast") %>% 
+  select(-performer) %>% 
+  group_by(song) %>%
+  slice_sample(n = 1) %>% 
+  ungroup()
+
+my_artist %>%
+  count(song)
+
+my_artist %>%
+  mutate(key = as.factor(key),
+         mode = as.factor(mode),
+         time_signature = as.factor(time_signature))
+```
+
+```{r, hier cluster}
+my_artist <- my_artist %>% 
+  column_to_rownames("song")
+
+hier_model <- hclust(daisy(my_artist, metric = "gower"), method = "complete")
+
+# heat map (ordered by song)
+heatmap(scale(data.matrix(my_artist)), Colv = NA, Rowv = NA)
+
+# heat map (ordered by cluster)
+heatmap(scale(data.matrix(my_artist)), Colv = NA)
+
+# dendrogram
+fviz_dend(hier_model, k = 6, cex = 0.5)
+```
+
+```{r, k means cluster}
+my_artist <- my_artist %>%
+  VIM::kNN(imp_var = FALSE)
+
+set.seed(253)
+kmeans_model <- kmeans(scale(my_artist), centers = 6)
+
+cluster_data <- my_artist %>% 
+  mutate(kmeans_cluster_k = kmeans_model$cluster) %>%
+  mutate(kmeans_cluster_k = as.factor(kmeans_cluster_k))
+
+cluster_data %>% 
+  ggplot(aes(x = danceability, y = energy, color = kmeans_cluster_k)) + 
+  geom_point(size = 3) + 
+  theme(legend.position = "none") + 
+  theme_minimal()
+```
+
+</details>
+
+
+
+
+## Insights
+
+(Describe takeaways here.)
+
+```{r}
+#| echo: false
+# put code for visualizations 
+
+```
+
+
+
+
+
+
+# Dimension Reduction
+
+## Implementation
+
+(Describe methods here.)
+
+
+
+<!-- don't modify the formatting below here -->
+See code below for full details.
+
+<details>
+<summary>View Code</summary>
+
+```{r}
+#| message: false
+#| warning: false
+
+# Include all dimension reduction code in here.
+# Make sure to include comments explaining what your code does.
+
+
+```
+
+</details>
+
+
+
+## Insights
+
+(Describe takeaways here.)
+
+```{r}
+#| echo: false
+# put code for visualizations 
+
+```
+
+
+
+
+
+# Conclusion
+
+
+
+
+
+# Contributions
+
+
+
+
+
+
+# Appendix
+
+```{r}
+#| eval: false
+# put code for any other methods or visualizations that you considered here
+# use comments to explain what your code is doing
+```
+
