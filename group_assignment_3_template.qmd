@@ -1,46 +1,67 @@
 ---
-title: "ga3"
-format: html
-editor: visual
+title: "Your Title"
+subtitle: "STAT 253: Statistical Machine Learning"
+date: today
+author: "Your Names"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    embed-resources: true
+    code-tools: true
 ---
 
-## Quarto
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
 
-## Running Code
+<!-- Your report should follow the format specified in the Group Assignment 3 Instructions. Please review that document carefully! -->
 
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+
+
 
 ```{r}
+#| include: false
+# Load packages 
+library(tidyverse)
 # load data
 
 library(tidyverse)
 library(cluster)      # to build the hierarchical clustering algorithm
 library(factoextra)
-music <- read_csv("https://bcheggeseth.github.io/253_spring_2024/data/billboard.csv")
-
-# check it out
-head(music)
-
-music %>% 
-  count(performer) %>% 
-  filter(n >= 30)
 
 ```
 
+
+# Research Goals
+
+
+
+# Data
+
 ```{r}
+#| message: false
+#| warning: false
+#| include: false
+
+# read in data
+music <- read.csv("https://bcheggeseth.github.io/253_spring_2024/data/billboard.csv")
+
+# Check out artists with at least 40 songs
+music %>% 
+  count(performer) %>% 
+  filter(n >= 40) %>% 
+  select(performer)
+
 # Pick just one of these artists to study
 my_artist <- music %>% 
   filter(performer == "Glee Cast") %>% 
   select(-performer) %>% 
-  group_by(song) %>%
+  group_by(song) %>%       # The last rows deal w songs that appear more than once
   slice_sample(n = 1) %>% 
   ungroup()
-  
+
 my_artist <- my_artist %>% 
   column_to_rownames("song")
-
 
 my_artist %>% 
   mutate(mode = as.factor(mode)) %>%
@@ -50,11 +71,24 @@ my_artist %>%
 
 ```
 
-HIERARCHICAL CLUSTERING
+```{r}
+#| message: false
+#| warning: false
+#| echo: false
 
-Algorithm Choice: Hierarchical Clustering with Complete Linkage
+# visualization
 
-I selected hierarchical clustering for this analysis because:
+```
+
+
+# Cluster Analysis
+
+## Implementation
+
+(Describe methods here.)
+
+
+We selected hierarchical clustering with complete linkage for this analysis because:
 
 1. Mixed data types: The dataset contains both continuous variables (duration_ms, danceability, energy, etc.) and categorical variables (mode, key, time_signature). Hierarchical clustering with the Gower distance metric effectively handles this mixture by computing appropriate distances for each variable type.
 
@@ -62,8 +96,24 @@ I selected hierarchical clustering for this analysis because:
 
 3. Complete linkage: We chose complete linkage because it measures the maximum distance between points in different clusters, which tends to produce more compact, well-separated clusters. This is particularly useful for identifying distinct song profiles where we want clear boundaries between cluster types.
 
-```{r}
 
+To determine the optimal number of clusters, we used the elbow method:
+
+The elbow on the curve appears around k = 4 where the curve starts to flatten out significantly. There are sharp drops from k=1 to k=3, but after k=4, the improvements become much smaller and the curve levels off. This indicates that k=4 captures most of the meaningful structure in the data, and adding more clusters beyond this point doesn't substantially improve the clustering quality.
+
+
+<!-- don't modify the formatting below here -->
+See code below for full details.
+
+<details>
+<summary>View Code</summary>
+
+```{r}
+#| message: false
+#| warning: false
+
+# Include all clustering code in here.
+# Make sure to include comments explaining what your code does.
 # Scenario 2: AT LEAST 1 feature x is a FACTOR (categorical)
 # Use either a "complete", "single", "average", or "centroid" linkage
 hier_model <- hclust(daisy(my_artist, metric = "gower"), method = "complete")
@@ -74,28 +124,12 @@ heatmap(scale(data.matrix(my_artist)), Colv = NA, Rowv = NA)
 # Heat maps: ordered by dendrogram / clustering
 heatmap(scale(data.matrix(my_artist)), Colv = NA)
 
-# Dendrogram (change font size w/ cex)
-fviz_dend(hier_model, cex = 1)
-
-
-
-```
-```{r}
-#| label: hierarchical-clustering
-
 # Build hierarchical clustering model using Gower distance
 # Gower distance handles mixed data types (numeric + categorical)
 hier_model <- hclust(daisy(my_artist, metric = "gower"), method = "complete")
 
 # Visualize the full dendrogram
 fviz_dend(hier_model, cex = 0.5, main = "Complete Dendrogram of Glee Cast Songs")
-```
-
-Determining the Number of Clusters
-
-To determine the optimal number of clusters, We used both the elbow method:
-```{r}
-#| label: elbow-method
 
 # Calculate total within-cluster sum of squares for k=1 to 10
 # Using cutree to cut the hierarchical tree at different heights
@@ -116,10 +150,6 @@ ss_data <- tibble(k = 1:10) %>%
       }
     }))
   }))
-```
-
-```{r}
-#| label: plot-elbow
 
 # Plot the elbow curve
 ggplot(ss_data, aes(x = k, y = tot_withinss)) +
@@ -129,10 +159,7 @@ ggplot(ss_data, aes(x = k, y = tot_withinss)) +
        x = "Number of Clusters (k)",
        y = "Total Within-Cluster Sum of Squares") +
   theme_minimal()
-```
-The elbow plot showed diminishing returns after k=4, and the silhouette analysis confirmed this choice. We selected k=4 because it achieved the highest average silhouette width (0.238), indicating that observations are well-matched to their own clusters and poorly-matched to neighboring clusters. While k=5 (silhouette: 0.206) and k=6 (silhouette: 0.179) provide more granular subdivisions, the decreasing silhouette scores suggest these additional clusters create less cohesive groupings. The choice of 4 clusters balances interpretability with statistical rigor, producing distinct, meaningful song categories.
 
-```{r}
 # Create final clustering with k=4
 cluster_data <- my_artist %>% 
   mutate(cluster = as.factor(cutree(hier_model, k = 4)))
@@ -148,23 +175,30 @@ cluster_sizes <- cluster_data %>%
   arrange(desc(n))
 
 print(cluster_sizes)
+
 ```
-### Insights
 
-The hierarchical clustering analysis of 181 Glee Cast songs identified four distinct musical profiles based on their audio characteristics.
+</details>
 
-Cluster 1: Mainstream Pop (largest cluster, ~80 songs) contains the show's contemporary hits with moderate energy (0.67) and danceability (0.56). These songs average 3.5 minutes and feature predominantly major keys with moderate valence (0.51). This cluster represents Glee's bread-and-butter repertoire—recognizable Top 40 covers that appealed to the show's core demographic and drove music sales. The consistency in duration and structure reflects commercial pop conventions.
 
-Cluster 2: High-Energy Dance Tracks (~50 songs) exhibits the highest danceability (0.65) and strong energy (0.85), with elevated valence (0.63) indicating upbeat, positive content. These songs served as competition performances and ensemble numbers, designed for choreography and visual impact. The moderate speechiness suggests incorporation of rhythmic elements typical of dance-pop and hip-hop influences.
 
-Cluster 3: Acoustic Ballads (~30 songs) features the lowest energy (0.39) and danceability (0.38), with notably high acousticness (0.49). These intimate, stripped-down performances provided emotional depth and character development moments. The cluster shows wider duration variance and includes the show's most dramatic solo performances where music advanced narrative over entertainment.
 
-Cluster 4: Low-Energy Character Moments (~20 songs) represents the smallest, most emotionally subdued cluster with the lowest energy (0.41), acousticness (0.86), and valence (0.29). The highly variable duration (2-3.5 minutes) and mixed musical characteristics suggest these are intimate character pieces—quiet reflections, vulnerable moments, or unconventional song choices that broke from typical Glee formatting.
+## Insights
 
-The clustering reveals Glee's strategic musical diversity: heavy reliance on upbeat pop (Clusters 1-2) for broad appeal and commercial success, balanced with quieter moments (Clusters 3-4) for emotional storytelling. The size distribution reflects the show's priorities—maintaining energy and entertainment value while preserving space for character-driven narrative through music.
+The hierarchical clustering of the 181 Glee Cast songs identified four musical profiles.
+
+Cluster 1 (pink, largest group) represents mainstream pop songs with moderate energy (0.67) and danceability (0.56). Looking at the energy vs danceability plot, these songs are spread across the middle range, showing variety within popular music. The valence vs acousticness plot shows these songs have moderate positivity (0.51) with low acousticness (0.22), indicating produced, studio-polished tracks. Duration centers around 3.5 minutes, typical of radio-friendly pop songs.
+
+Cluster 2 (green, second largest) contains high-energy performances with the strongest danceability (0.65) and highest energy (0.85). The scatter plots show these songs clustered in the upper-right, indicating upbeat, energetic tracks. These songs have elevated valence (0.63), making them the most positive-sounding cluster. The bar chart shows low acousticness (0.12) and moderate speechiness (0.08), suggesting electronic production with some rhythmic vocal elements.
+
+Cluster 3 (blue, medium-sized) features longer songs with the widest duration range (3.5-4.5 minutes) as shown in the boxplot. The energy vs danceability plot shows these songs scattered across moderate ranges (energy ~0.39, danceability ~0.38). The acousticness is notably higher (0.49) compared to other clusters, and valence varies widely, indicating emotional diversity in this group.
+
+Cluster 4 (purple, smallest group) stands out with the lowest energy (0.24) and highest acousticness (0.86) visible in the bar chart. The scatter plots show these songs clustered in the lower-left corner of the energy-danceability space, with highly variable valence (0.29). The duration plot reveals this cluster has the most variable song lengths, ranging from 2 to 3.5 minutes, suggesting diverse performance types.
+
+The four clusters reveal distinct musical approaches: energetic dance tracks (Cluster 2), mainstream pop variety (Cluster 1), moderate-energy diverse songs (Cluster 3), and intimate low-energy performances (Cluster 4).
 
 ```{r}
-
+#| echo: false
 # Visualization 1: Cluster characteristics across key audio features
 cluster_summary <- cluster_data %>%
   group_by(cluster) %>%
@@ -190,12 +224,8 @@ ggplot(cluster_summary, aes(x = feature, y = value, fill = cluster)) +
        fill = "Cluster") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-```{r}
-#| label: viz-energy-danceability
-#| echo: false
-#| fig-width: 8
-#| fig-height: 6
+
+
 
 # Visualization 2: Energy vs Danceability scatter plot
 ggplot(cluster_data, aes(x = danceability, y = energy, color = cluster, size = valence)) +
@@ -207,8 +237,7 @@ ggplot(cluster_data, aes(x = danceability, y = energy, color = cluster, size = v
        color = "Cluster",
        size = "Valence") +
   theme_minimal()
-```
-```{r}
+
 
 # Visualization 3: Valence vs Acousticness
 ggplot(cluster_data, aes(x = acousticness, y = valence, color = cluster)) +
@@ -219,8 +248,7 @@ ggplot(cluster_data, aes(x = acousticness, y = valence, color = cluster)) +
        y = "Valence (Musical Positivity)",
        color = "Cluster") +
   theme_minimal()
-```
-```{r}
+
 # Visualization 4: Duration distribution by cluster
 ggplot(cluster_data, aes(x = cluster, y = duration_ms/60000, fill = cluster)) +
   geom_boxplot(alpha = 0.7) +
@@ -231,75 +259,74 @@ ggplot(cluster_data, aes(x = cluster, y = duration_ms/60000, fill = cluster)) +
        y = "Duration (minutes)",
        fill = "Cluster") +
   theme_minimal()
+
 ```
 
+
+
+
+
+
+# Dimension Reduction
+
+## Implementation
+
+(Describe methods here.)
+
+
+
+<!-- don't modify the formatting below here -->
+See code below for full details.
+
+<details>
+<summary>View Code</summary>
 
 ```{r}
-cluster_data <- my_artist %>% 
-  mutate(hier_cluster_k = as.factor(cutree(hier_model, k = 4)))
-         
-# Visualize the clusters on the dendrogram (change font size w/ cex)
-fviz_dend(hier_model, k = 4, cex = 0.35)
+#| message: false
+#| warning: false
+
+# Include all dimension reduction code in here.
+# Make sure to include comments explaining what your code does.
+
 
 ```
 
+</details>
 
 
 
+## Insights
 
-PCA
+(Describe takeaways here.)
 
 ```{r}
-# scale = TRUE, center = TRUE first standardizes the features
-pca_results <- prcomp(my_artist, scale = TRUE, center = TRUE)
+#| echo: false
+# put code for visualizations 
 
-# Get the loadings which define the PCs
-pca_results %>% 
-  pluck("rotation")
-
-# Plot loadings for first "k" PCs (you pick k)
-library(reshape2)
-melt(pca_results$rotation[, 1:10]) %>% 
-  ggplot(aes(x = Var1, y = value, fill = Var1)) +
-    geom_bar(stat = "identity") +
-    facet_wrap(~ Var2) + 
-    labs(y = "loadings", x = "original features", fill = "original features")
-
-# Plot loadings for just the first PC
-melt(pca_results$rotation) %>%
-  filter(Var2 == "PC1") %>% 
-  ggplot(aes(x = Var1, y = value, fill = Var1)) +
-    geom_bar(stat = "identity") +
-    labs(y = "loadings", x = "original features", fill = "original features")
-
-# Loadings plot for first 2 PCs
-library(factoextra)
-fviz_pca_var(pca_results, repel = TRUE)
 ```
+
+
+
+
+
+# Conclusion
+
+
+
+
+
+# Contributions
+
+
+
+
+
+
+# Appendix
 
 ```{r}
-# Load package for tidy table
-library(tidymodels)
-
-# Numerical summaries: Measure information captured by each PC
-pca_results %>% 
-  tidy(matrix = "eigenvalues")
-
-# Graphical summary 1: SCREE PLOT
-# Plot % of variance explained by each PC
-pca_results %>% 
-  tidy(matrix = "eigenvalues") %>% 
-  ggplot(aes(y = percent, x = PC)) + 
-    geom_point(size = 2) + 
-    geom_line() + 
-    labs(y = "% of variance explained")
-
-# Graphical summary 2: Plot cumulative % of variance explained by each PC
-pca_results %>% 
-  tidy(matrix = "eigenvalues") %>% 
-  rbind(0) %>% 
-  ggplot(aes(y = cumulative, x = PC)) + 
-    geom_point(size = 2) + 
-    geom_line() + 
-    labs(y = "CUMULATIVE % of variance explained")
+#| eval: false
+# put code for any other methods or visualizations that you considered here
+# use comments to explain what your code is doing
 ```
+
