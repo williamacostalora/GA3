@@ -12,7 +12,6 @@ format:
 ---
 
 
-
 <!-- Your report should follow the format specified in the Group Assignment 3 Instructions. Please review that document carefully! -->
 
 
@@ -23,11 +22,10 @@ format:
 #| include: false
 # Load packages 
 library(tidyverse)
-# load data
-
-library(tidyverse)
+library(tidymodels)
 library(cluster)      # to build the hierarchical clustering algorithm
 library(factoextra)
+library(reshape2)
 
 ```
 
@@ -273,6 +271,11 @@ ggplot(cluster_data, aes(x = cluster, y = duration_ms/60000, fill = cluster)) +
 
 (Describe methods here.)
 
+PCA is a tool that helps simplify a big list of song characteristics by turning them into a few main themes or patterns. Instead of looking at every feature separately, like danceability, energy, loudness, and acousticness, PCA groups related features together into new combined categories.
+
+Each of these new categories is called a principal component. The first one (PC1) represents the strongest overall pattern in the songs. The second one (PC2) represents the next most important pattern, and each one after that captures a smaller part of what makes the songs different from each other.
+
+The code below shows how strongly each song characteristic contributes to each principal component, and the percentage of the difference between the songs that is explained by each principal component.
 
 
 <!-- don't modify the formatting below here -->
@@ -288,6 +291,16 @@ See code below for full details.
 # Include all dimension reduction code in here.
 # Make sure to include comments explaining what your code does.
 
+# scale = TRUE, center = TRUE first standardizes the features
+pca_results <- prcomp(my_artist, scale = TRUE, center = TRUE)
+
+# Get the loadings which define the PCs
+pca_results %>% 
+  pluck("rotation")
+
+#Measure information captured by each PC
+pca_results %>% 
+  tidy(matrix = "eigenvalues")
 
 ```
 
@@ -299,13 +312,51 @@ See code below for full details.
 
 (Describe takeaways here.)
 
+Visualization 1 below shows in detail how much of each variable is used in PC1 through PC5. Below are explanations of the first 2 PCs.
+
+PC1: separates songs based on how energetic and “produced” they sound (Energy vs. Acousticness). On the higher side of PC1 we see songs with high danceability, energy, loudness, valence. On the negative side of PC1 we see songs that are  quieter, more acoustic, more speech-like or instrumental.PC1 basically captures the difference between high-energy pop numbers and softer, more acoustic songs in the Glee Cast catalog.
+
+PC2: separates songs based on how well the songs performed commercially. Songs that spent more weeks on the Billboard charts or have higher Spotify popularity end up higher on PC2. PC2 basically distinguishes between songs that were super successfull and popular from those that were not as much of a hit.
+
+
+PC1 explains about 25% of all the differences between songs (variance), and PC2 explains about 10%. The next three components each add small chunks of information (7-9%). After the PC5, the remaining components contribute very little additional information while making the analysis even more complex by adding extra dimensions. While the largest drop in importance occurs after the first two components, as seen in Visualization 2, we decided to keep five PCs because they provide a more complete picture of how the songs differ from one another. Including five components makes the analysis a bit more complicated, but it allows us to retain more information of the meaningful musical variation in the data.
+
+By keeping five principal components, we keep about 60% of all the information in the original data, as seen in Visualization 3. This means we’re still capturing most of the major musical patterns, such as energy level, acousticness, popularity, and other qualities, while reducing the dataset from 15 separate features down to just 5 summarized dimensions.
+
+
 ```{r}
 #| echo: false
 # put code for visualizations 
+# Load package for tidy table
+
+# PCA Visualization 1: Plotting loadings for first 5 PCs
+melt(pca_results$rotation[, 1:5]) %>% 
+  ggplot(aes(x = Var1, y = value, fill = Var1)) +
+    geom_bar(stat = "identity") +
+    facet_wrap(~ Var2) + 
+    labs(y = "loadings", x = "original features", fill = "original features")+
+    theme(axis.text.x  = element_text(size = 7, angle = 45, hjust = 1) )
+
+
+# PCA Visualization 2: Scree Plot (% of variance explained by each PC)
+pca_results %>% 
+  tidy(matrix = "eigenvalues") %>% 
+  ggplot(aes(y = percent, x = PC)) + 
+    geom_point(size = 2) + 
+    geom_line() + 
+    labs(y = "% of variance explained")
+
+
+# PCA Visualization 3: Cumulative % of variance explained by each PC
+pca_results %>% 
+  tidy(matrix = "eigenvalues") %>% 
+  rbind(0) %>% 
+  ggplot(aes(y = cumulative, x = PC)) + 
+    geom_point(size = 2) + 
+    geom_line() + 
+    labs(y = "CUMULATIVE % of variance explained")
 
 ```
-
-
 
 
 
