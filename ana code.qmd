@@ -93,18 +93,12 @@ pca_results %>%
 
 # Plot loadings for first "k" PCs (you pick k)
 library(reshape2)
-melt(pca_results$rotation[, 1:10]) %>% 
+melt(pca_results$rotation[, 1:]) %>% 
   ggplot(aes(x = Var1, y = value, fill = Var1)) +
     geom_bar(stat = "identity") +
     facet_wrap(~ Var2) + 
-    labs(y = "loadings", x = "original features", fill = "original features")
-
-# Plot loadings for just the first PC
-melt(pca_results$rotation) %>%
-  filter(Var2 == "PC1") %>% 
-  ggplot(aes(x = Var1, y = value, fill = Var1)) +
-    geom_bar(stat = "identity") +
-    labs(y = "loadings", x = "original features", fill = "original features")
+    labs(y = "loadings", x = "original features", fill = "original features")+
+    theme(axis.text.x  = element_text(size = 10, angle = 45, hjust = 1) )
 
 # Loadings plot for first 2 PCs
 library(factoextra)
