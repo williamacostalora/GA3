@@ -111,9 +111,6 @@ To show all the features, their scale and variance, we decided to include a boxp
 
 ## Implementation
 
-(Describe methods here.)
-
-
 We selected hierarchical clustering with complete linkage for this analysis because:
 
 1. Mixed data types: The dataset contains both continuous variables (duration_ms, danceability, energy, etc.) and categorical variables (mode, key, time_signature). Hierarchical clustering with the Gower distance metric effectively handles this mixture by computing appropriate distances for each variable type.
@@ -297,8 +294,6 @@ ggplot(cluster_data, aes(x = cluster, y = duration_ms/60000, fill = cluster)) +
 
 ## Implementation
 
-(Describe methods here.)
-
 PCA is a tool that helps simplify a big list of song characteristics by turning them into a few main themes or patterns. Instead of looking at every feature separately, like danceability, energy, loudness, and acousticness, PCA groups related features together into new combined categories.
 
 Each of these new categories is called a principal component. The first one (PC1) represents the strongest overall pattern in the songs. The second one (PC2) represents the next most important pattern, and each one after that captures a smaller part of what makes the songs different from each other.
@@ -337,8 +332,6 @@ pca_results %>%
 
 
 ## Insights
-
-(Describe takeaways here.)
 
 Visualization 1 below shows in detail how much of each variable is used in PC1 through PC5. Below are explanations of the first 2 PCs.
 
@@ -390,8 +383,36 @@ pca_results %>%
 
 # Conclusion
 
+## Key Takeaways
+
+### Clustering
+
+Clustering analysis of this data identified 4 key clusters across songs by the Glee Cast.
+
+- Cluster 1: This is the largest cluster, representing mainstream pop songs with moderate energy and danceability. These songs also have moderate positivity with low acousticness, which indicate that they are produced, studio-polished tracks. Duration for these songs is about 3.5 minutes, a typical length for radio-friendly pop songs.
+
+- Cluster 2: This is the second largest cluster, representing high-energy songs with strong danceability and high energy levels. These songs also display positive-sounding trends with low acousticness and moderate speehiness. These qualities suggest that electronic production with some rhythmic vocal elements are present.
+
+- Cluster 3: This is the second smallest cluster, representing longer songs with a duration range of about 3.5-4.5 minutes. These songs have moderate energy and danceability, with high acousticness overall. Additionally, these songs have a noticeably wide valence, indicating emotional diversity across the cluster.
+
+- Cluster 4: This is the smallest cluster, representing low energy and highly acoustic songs. These songs are pretty variable in valence and song length, ranging from 2-3.5 minutes. Thus, this cluster is likely made up of songs with diverse performance types.
+
+### PCA
+
+Principal component analysis of this data suggests the use of 5 PCs for this dataset. These 5 PCs maintain about 60% of the original data, reducing the 15 initial features down to 5 combined dimensions. Although this makes the analysis a bit more complicated, more information is retained by using 5 PCs. The first 2 PCs- which cumulatively explain about 35% of variability -are defined as follows:
+
+- PC1: This PC separates songs based on their energy and acousticness levels, thus providing insight into how energetic and produced they sound. The positive side of the PC groups together songs with high danceability, energy, loudness, and valence. Conversely, the negative side of the PC includes songs that are quieter, more acoustic, and more speech-like or instrumental.
+
+- PC2: This PC separates songs based on their time spent on the Billboard charts and Spotify popularity, thus providing insight into how well they performed commercially. The positive side of the PC groups together songs that spent more time on the Billboard charts and have a higher Spotify popularity, whereas those on the negative side are generally less popular.
 
 
+## Limitations
+
+Clustering: Computationally expensive, greedy.
+
+PCA: Features no longer have their original meanings, thus restricting interpretability.
+
+In general, the results from these modelling algorithms are difficult to interpret. Further, these algorithms only provide insight into the general structure within the data (unsupervised learning), and cannot be used to make predictions for external data points.
 
 
 # Contributions
@@ -401,7 +422,7 @@ Lucia wrote the Research Goals and Data sections, as well as the initial explora
   
 William focused on Clustering code. He wrote the implementation and insights on Clustering.
   
-Georgia also ran PCA and Clustering code for confirmation, she also helped write the Conclusion.
+Georgia also ran PCA and Clustering code for confirmation, she also wrote the Conclusion.
   
 We all helped reviewing and commenting each other's sections for improvement.
 
