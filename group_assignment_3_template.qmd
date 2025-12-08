@@ -31,7 +31,7 @@ library(reshape2)
 
 
 # Research Goals
-We are Glee Cast fans who host a weekly show at the WMCN radio station. Before approving our programming, our manager asked for a review of how successful these tracks have been at the station. Our goal is to summarize and take a closer look at the station hits, audience responses, and identify any song features that might help drive popularity.
+We are Glee Cast fans who host a weekly show at the WMCN radio station. Before approving our programming, our manager asked for a review successful tracks at the station. Our goal is to summarize and take a closer look at the station hits, audience responses, and identify any song features of the songs that made it to the "Billboard Hot 100".
 
 
 
@@ -41,9 +41,9 @@ In order to understand the popularity of Glee Cast’s songs we retrieved data f
 
 The song's popularity record data was originally retrieved from Data.World. As background context, the “Billboard Hot 100” is a record chart for songs, regardless of the artist, that has been published weekly since 1958 by the Billboard magazine based on the digital and physical sales, radio airplay and online streaming in the U.S. 
 
-The retrieved dataset consists of 243,313 observations representing songs by thousands of artists from years prior to 2021, while also accounting for 15 variables including spotify popularity, billboard weeks and song features such as danceability, energy, loudness, liveness among others. For our research purpose we selected the Glee Cast as our main artist focus which included an overall of 181 songs. 
+The retrieved dataset consists of 243,313 observations representing songs by thousands of artists from years prior to 2021, while also accounting for 15 variables including Spotify popularity, billboard weeks and song features such as danceability, energy, loudness, liveness among others. For our research purpose we selected the Glee Cast as our main artist focus which included an overall of 181 songs. 
 
-Since our goal is exploration, we use an unsupervised learning approach. Therefore we do not set a determined outcome ‘y’ but rather we try to take a look at the internal structure to understand the patterns. 
+Since our goal is exploration of the features, we use an unsupervised learning approach. Therefore we do not set a determined outcome ‘y’ but rather we try to take a look at the internal structure to understand the patterns. 
 
 ```{r}
 #| message: false
@@ -84,8 +84,27 @@ my_artist %>%
 #| echo: false
 
 # visualization
+scaled_artist <- my_artist %>%
+  mutate(across(everything(), scale))
 
+scaled_artist <- scaled_artist %>%
+  pivot_longer(cols = everything(),
+               names_to = "variable",
+               values_to = "value")
+
+# Boxplot of scaled variables
+ggplot(scaled_artist, aes(x = variable, y = value)) +
+  geom_boxplot() +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Boxplots of Scaled Predictors",
+       x = "Predictors",
+       y = "Scaled Value (z-score)")
 ```
+
+To show all the features, their scale and variance, we decided to include a boxplot of the scaled predictors. In most of the unsupervised learning techniques such as hierarchical clustering or PCA - which we will be using in this analysis - features need to be standardized in order to prevent one of features with a bigger scale to have more weight on the data exploration. Here we can see that all features mean lie in the same line (0), however their variance and distribution looks different for all, allowing to overall already check for some feature that might have the highest variance for PCA analysis.  
+
+
 
 
 # Cluster Analysis
