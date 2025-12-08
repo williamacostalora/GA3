@@ -395,9 +395,15 @@ pca_results %>%
 
 
 # Contributions
-
-
-
+Ana focused on PCA code, exploration, implementation and insights. She wrote all analysis of the PCA.
+  
+Lucia wrote the Research Goals and Data sections, as well as the initial exploration of the features through the boxplot. 
+  
+William focused on Clustering code. He wrote the implementation and insights on Clustering.
+  
+Georgia helped with coding and writing the conclusion.
+  
+We all helped reviewing and commenting each other's sections for improvement.
 
 
 
