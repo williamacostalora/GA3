@@ -93,18 +93,23 @@ scaled_artist <- scaled_artist %>%
                values_to = "value")
 
 # Boxplot of scaled variables
-ggplot(scaled_artist, aes(x = variable, y = value)) +
-  geom_boxplot() +
+ggplot(scaled_artist, aes(x = variable, y = value, fill = variable)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = 16, outlier.alpha = 0.5) +
+  scale_fill_viridis_d(option = "plasma") +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "Boxplots of Scaled Predictors",
-       x = "Predictors",
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
+    legend.position = "none",
+    plot.title = element_text(face = "bold", size = 14),
+    panel.grid.major.x = element_blank()
+  ) +
+  labs(title = "Distribution of Scaled Audio Features",
+       subtitle = "Standardized values (z-scores) for Glee Cast songs",
+       x = "Audio Features",
        y = "Scaled Value (z-score)")
 ```
 
 To show all the features, their scale and variance, we decided to include a boxplot of the scaled predictors. In most of the unsupervised learning techniques such as hierarchical clustering or PCA - which we will be using in this analysis - features need to be standardized in order to prevent one of features with a bigger scale to have more weight on the data exploration. Here we can see that all features mean lie in the same line (0), however their variance and distribution looks different for all, allowing to overall already check for some feature that might have the highest variance for PCA analysis.  
-
-
 
 
 # Cluster Analysis
@@ -113,14 +118,13 @@ To show all the features, their scale and variance, we decided to include a boxp
 
 We selected hierarchical clustering with complete linkage for this analysis because:
 
-1. Mixed data types: The dataset contains both continuous variables (duration_ms, danceability, energy, etc.) and categorical variables (mode, key, time_signature). Hierarchical clustering with the Gower distance metric effectively handles this mixture by computing appropriate distances for each variable type.
+1. Mixed data types: The dataset contains quantitative variables (duration_ms, danceability, energy, etc.) and categorical variables (mode, key, time_signature). Hierarchical clustering with the Gower distance metric handles this mixture by computing appropriate distances for each variable type.
 
-2. Exploratory flexibility: Hierarchical clustering doesn't require specifying the number of clusters upfront, allowing us to explore the dendrogram and use data-driven methods to determine the optimal k.
+2. Exploratory flexibility: Hierarchical clustering does not require specifying the number of clusters upfront, allowing us to explore the dendrogram and use methods to experminent with the number of k.
 
 3. Complete linkage: We chose complete linkage because it measures the maximum distance between points in different clusters, which tends to produce more compact, well-separated clusters. This is particularly useful for identifying distinct song profiles where we want clear boundaries between cluster types.
 
-
-To determine the optimal number of clusters, we used the elbow method:
+To determine the optimal number of clusters, we used the elbow method in the Total Within-Cluster Sum of Squares Plot below:
 
 The elbow on the curve appears around k = 4 where the curve starts to flatten out significantly. There are sharp drops from k=1 to k=3, but after k=4, the improvements become much smaller and the curve levels off. This indicates that k=4 captures most of the meaningful structure in the data, and adding more clusters beyond this point doesn't substantially improve the clustering quality.
 
@@ -137,6 +141,7 @@ See code below for full details.
 
 # Include all clustering code in here.
 # Make sure to include comments explaining what your code does.
+
 # Scenario 2: AT LEAST 1 feature x is a FACTOR (categorical)
 # Use either a "complete", "single", "average", or "centroid" linkage
 hier_model <- hclust(daisy(my_artist, metric = "gower"), method = "complete")
@@ -198,28 +203,19 @@ cluster_sizes <- cluster_data %>%
   arrange(desc(n))
 
 print(cluster_sizes)
-
+ 
 ```
 
 </details>
 
 
-
-
 ## Insights
 
-The hierarchical clustering of the 181 Glee Cast songs identified four musical profiles.
+The hierarchical clustering identified four musical profiles in the 181 Glee Cast songs which are visible in the colored dendogram from the previous section. Cluster 1 (n=113) is the largest group with moderate energy (0.68), danceability (0.55), and valence (0.51). The energy vs danceability scatter plot shows these songs spread across the middle range. These mainstream pop songs average 3.6 minutes with low acousticness (0.22) and are entirely in major keys (mode=1.00). Cluster 2 (n=42) has the highest energy (0.81) and danceability (0.64),  visible in the upper-right corner of the scatter plot. The bar chart shows peaks in energy and danceability for this cluster. With high valence (0.62) and low acousticness (0.11), these dance tracks are the loudest (-4.68 dB) and fastest (124 BPM), averaging 3.5 minutes.
 
-Cluster 1 (pink, largest group) represents mainstream pop songs with moderate energy (0.67) and danceability (0.56). Looking at the energy vs danceability plot, these songs are spread across the middle range, showing variety within popular music. The valence vs acousticness plot shows these songs have moderate positivity (0.51) with low acousticness (0.22), indicating produced, studio-polished tracks. Duration centers around 3.5 minutes, typical of radio-friendly pop songs.
+Cluster 3 (n=7) and Cluster 4 (n=19) contain lower-energy songs, positioned in the lower-left region of the energy vs danceability plot. Cluster 3 has moderate-low energy (0.39) and danceability (0.37) with acousticness at 0.49, visible in the bar chart. The valence vs acousticness plot shows this cluster has the lowest valence (0.23). The duration boxplot shows these songs average 3.9 minutes, the longest duration. Cluster 4 has the lowest energy (0.24) and highest acousticness (0.86), appearing as the tallest bar in the acousticness section. With low valence (0.29), this cluster has the shortest duration (2.9 minutes) in the boxplot, and is the quietest (-10.18 dB) and slowest (107 BPM). Both clusters use only minor keys (mode=0.00), contrasting with Cluster 1's major keys.
 
-Cluster 2 (green, second largest) contains high-energy performances with the strongest danceability (0.65) and highest energy (0.85). The scatter plots show these songs clustered in the upper-right, indicating upbeat, energetic tracks. These songs have elevated valence (0.63), making them the most positive-sounding cluster. The bar chart shows low acousticness (0.12) and moderate speechiness (0.08), suggesting electronic production with some rhythmic vocal elements.
-
-Cluster 3 (blue, medium-sized) features longer songs with the widest duration range (3.5-4.5 minutes) as shown in the boxplot. The energy vs danceability plot shows these songs scattered across moderate ranges (energy ~0.39, danceability ~0.38). The acousticness is notably higher (0.49) compared to other clusters, and valence varies widely, indicating emotional diversity in this group.
-
-Cluster 4 (purple, smallest group) stands out with the lowest energy (0.24) and highest acousticness (0.86) visible in the bar chart. The scatter plots show these songs clustered in the lower-left corner of the energy-danceability space, with highly variable valence (0.29). The duration plot reveals this cluster has the most variable song lengths, ranging from 2 to 3.5 minutes, suggesting diverse performance types.
-
-The four clusters reveal distinct musical approaches: energetic dance tracks (Cluster 2), mainstream pop variety (Cluster 1), moderate-energy diverse songs (Cluster 3), and intimate low-energy performances (Cluster 4).
-
+The visualizations confirm four distinct performance styles: mainstream pop (Cluster 1), high-energy dance numbers (Cluster 2), acoustic-emotional pieces (Cluster 3), and intimate ballads (Cluster 4). The scatter plots show clear separation between high-energy and low-energy clusters, while the bar chart highlights acousticness differences between produced and acoustic performances. The averaged features for each cluster assignment also follow this trend
 ```{r}
 #| echo: false
 # Visualization 1: Cluster characteristics across key audio features
@@ -283,11 +279,37 @@ ggplot(cluster_data, aes(x = cluster, y = duration_ms/60000, fill = cluster)) +
        fill = "Cluster") +
   theme_minimal()
 
+# Getting mean features by cluster for ALL audio features 
+cluster_summary <- cluster_data %>%
+  group_by(cluster) %>%
+  summarise(
+    count = n(),
+    avg_duration_min = mean(duration_ms) / 60000,
+    avg_danceability = mean(danceability),
+    avg_energy = mean(energy),
+    avg_key = mean(as.numeric(key)),
+    avg_loudness = mean(loudness),
+    avg_mode = mean(as.numeric(mode)),
+    avg_speechiness = mean(speechiness),
+    avg_acousticness = mean(acousticness),
+    avg_instrumentalness = mean(instrumentalness),
+    avg_liveness = mean(liveness),
+    avg_valence = mean(valence),
+    avg_tempo = mean(tempo),
+    avg_time_signature = mean(as.numeric(time_signature))
+  ) %>%
+  arrange(cluster)
+
+# Display as formatted table
+knitr::kable(cluster_summary, 
+             digits = 2,
+             col.names = c("Cluster", "Count", "Duration (min)", "Danceability", 
+                          "Energy", "Key", "Loudness", "Mode", "Speechiness",
+                          "Acousticness", "Instrumentalness", "Liveness", 
+                          "Valence", "Tempo", "Time Sig"),
+             caption = "Average Audio Features by Cluster (All Features)")
+
 ```
-
-
-
-
 
 
 # Dimension Reduction
